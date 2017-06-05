@@ -1,0 +1,8 @@
+<map id="G" name="G">
+<area shape="rect" id="node1" href="$classsdh_1_1sdhbase_1_1c_s_d_h_error.html" title="Exception classes." alt="" coords="5,112,168,141"/>
+<area shape="rect" id="node3" href="$classsdh_1_1dsa_1_1c_d_s_a_error.html" title="DSA (tactile sensor of the SDH) related error occurred." alt="" coords="279,5,412,35"/>
+<area shape="rect" id="node5" href="$classsdh_1_1sdhbase_1_1c_s_d_h_error_communication.html" title="SDH&#45;exception: Communication error occured in the sd module." alt="" coords="220,59,471,88"/>
+<area shape="rect" id="node7" href="$classsdh_1_1sdhbase_1_1c_s_d_h_error_internal_collision.html" title="SDH&#45;exception: The given target angles would lead to an internal collision." alt="" coords="219,112,472,141"/>
+<area shape="rect" id="node9" href="$classsdh_1_1sdhbase_1_1c_s_d_h_error_invalid_parameter.html" title="SDH&#45;exception: Invalid parameter(s) were given." alt="" coords="217,165,473,195"/>
+<area shape="rect" id="node11" href="$classsdh_1_1sdhbase_1_1c_s_d_h_error_timeout.html" title="SDH&#45;exception: A (communication) timeout occured." alt="" coords="241,219,449,248"/>
+</map>

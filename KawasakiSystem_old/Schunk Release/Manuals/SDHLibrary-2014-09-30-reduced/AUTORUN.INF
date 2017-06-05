@@ -1,0 +1,5 @@
+[autorun]
+icon=.\schunk.ico
+open=shelexec .\index.html
+shell\verb\command=shelexec .\index.html
+shell\verb=SDH CD contents overview

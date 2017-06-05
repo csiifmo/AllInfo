@@ -1,0 +1,49 @@
+#!/usr/bin/env python
+
+#######################################################################
+#
+## \file
+#  \section sdhlibrary_python_sdhoff_general General file information
+#
+#    \author   Dirk Osswald
+#    \date     2007-01-19
+#
+#  \brief  
+#    Simple script to quickly set power off in controllers in SDH.
+#
+#    Does \b NOT rely on sdh.py and thus can be used while modifying sdh.h
+#
+#  \section sdhlibrary_python_sdhoff_copyright Copyright
+#
+#  Copyright (c) 2007 SCHUNK GmbH & Co. KG
+#
+#  <HR>
+#  \internal
+#
+#    \subsection sdhlibrary_python_sdhoff_details SVN related, detailed file specific information:
+#      $LastChangedBy: $
+#      $LastChangedDate: $
+#      \par SVN file revision:
+#        $Id: $
+#
+#  \subsection sdhlibrary_python_sdhoff_changelog Changelog of this file:
+#      \include sdhoff.log
+#
+#######################################################################
+
+'''Switch the joint controllers of the SDH off (works for SDH connected via RS232 only for now)
+'''
+__version__ = "$Id: $"
+
+import serial
+import sdh.auxiliary
+
+parser = sdh.cSDHOptionParser( usage    =  __doc__ + "\nusage: %prog [options]",
+                               revision = __version__ )
+
+(options, args) = parser.parse_args()
+
+com = serial.Serial( port=options.port, baudrate=115200, rtscts=0, xonxoff=0 )
+
+com.write( "power=0,0,0,0,0,0,0\r\n" )
+com.close()

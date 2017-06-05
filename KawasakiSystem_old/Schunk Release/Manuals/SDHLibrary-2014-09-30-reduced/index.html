@@ -1,0 +1,286 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<!-- //! \cond ignore_me   doxygen cannot parse html files, so just ignore it -->
+
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="./.htmlstuff/overview.css">
+    <title>Overview of the SDH2 CD contents</title>
+  </head>
+
+  <body>
+
+<div id="framecontent">
+
+<a href="http://www.de.schunk.com"><img src="./.htmlstuff/schunk_logo_top_navi_v2.gif" alt="SCHUNK GmbH &amp; Co. KG" border="0"></a><br>
+<p style="text-indent:14px">SDH CD overview:</p>
+<ul>
+  <li><a href="#libraries">SDH access libraries</a>
+  <ul>
+    <li><a href="#cplusplus">C++</a></li>
+    <li><a href="#python">Python</a></li>
+  </ul></li>
+  <li><a href="#additional">Additional stuff</a>
+  <ul>
+    <li><a href="#tools">Tools</a></li>
+    <li><a href="#docu">Documentation</a></li>
+    <li><a href="#firmware">Firmware</a></li>
+    <li><a href="#cad">CAD data</a></li>
+  </ul></li>
+  <li><a href="#misc">Miscelaneous stuff</a>
+  <ul>
+    <li><a href="#troubleshooting">Troubleshooting</a></li>
+  </ul></li>
+</ul>
+<br>
+<img src="./.htmlstuff/sdh.png" border="0" alt="Image: SDH - SCHUNK Dextrous Hand">
+
+</div>
+
+
+<div id="maincontent">
+<div class="innertube">
+
+    <h1>Overview of the SDH2 CD </h1>
+    <h2>Date: 2014-09-30 </h2>
+
+This CD contains documents for the SCHUNK dextrous hand SDH. The documents include library source code, 
+documentation files and programs. These various documents are distributed over the subdirectories explained
+below.  
+
+<h3 id="libraries">SDH access libraries</h3>
+<h4 id="cplusplus">
+  <a class="directory" href="./cpp/"><img alt="#" src="./.htmlstuff/folder.png"/>./cpp/</a>
+  SDHLibrary-CPP, release 0.0.2.10, date 2014-02-28
+</h4>
+  The SDHLibrary-CPP is a C++ library and some demonstration programs to control the SDH from a PC using the C++ programming language. 
+      <ul>
+      <li><a href="./cpp/doc/external/html/release_8h.html#project_release_sdhlibrary_cpp">Changelog of the SDHLibrary-C++ release</a>
+      <li><a href="./cpp/README.txt">./cpp/README.txt</a> : directory overview in TXT format</li>
+      <li><a href="./cpp/doc/index.html">./cpp/doc/index.html</a> : documentation in HTML and PDF format</li>
+      <li><a href="./cpp/Makefile">./cpp/Makefile</a> : to generate the library in Cygwin and Linux environments</li>
+      <li><a href="./cpp/Makefile-settings">./cpp/Makefile-settings</a> : settings for generating the library in Cygwin and Linux environments</li>
+      <li><a href="./cpp/vcc/SDHLibrary.sln">./cpp/vcc/SDHLibrary.sln</a> : Visual Studio solutions file to generate the library and demo programs in Windows environments</li>
+    </ul>
+
+    To compile the C++ Library you might want/have to adjust some settings:
+    <ul>
+      <li>In <a href="./cpp/sdh/sdhlibrary_settings.h">./cpp/sdh/sdhlibrary_settings.h</a>
+        <ul>
+          <li>Set <code>SDH_USE_NAMESPACE</code> to 1 (default) to put all classes in a namespace "SDH". Set to 0 to leave them in the global namespace</li>
+        </ul></li>
+      <li>For <b>Cygwin/Linux</b>: in <a href="./cpp/Makefile-settings">./cpp/Makefile-settings</a>
+        <ul>
+          <li>Set the <code>LIBRARY_TYPE</code> to static or shared</li>
+          <li>Set the <code>WITH_ESD_CAN</code> to 1 to use the ESD CAN library. Set to 0 if you don't have or don't want to use a CAN adapter from ESD 
+	        <ul>
+    	      <li>If WITH_ESD_CAN is 1 then adjust the include and library paths for ESD CAN. See <code>EXTRAINCDIRS</code> and <code>EXTRALDFLAGS</code>.</li>
+	        </ul></li>
+          <li>Set the <code>WITH_PEAK_CAN</code> to 1 to use the PEAK CAN library. Set to 0 if you don't have or don't want to use a CAN adapter from PEAK 
+	        <ul>
+    	      <li>If WITH_PEAK_CAN is 1 then adjust the include and library paths for ESD CAN. See <code>EXTRAINCDIRS</code> and <code>EXTRALDFLAGS</code>.</li>
+	        </ul></li>
+        </ul></li>
+      <li>For <b>Windows/Visual Studio</b> the settings must be done in the project files:
+        <ul>
+          <li> If you have a supported adapter for the CAN-bus from company <a href="http://www.esd.eu/">ESD</a> and want to use it, then:
+          <ul>
+            <li>Set the <code>WITH_ESD_CAN</code> preprocessor macro to <code>1</code> in order to use the ESD CAN library. Make this setting in the <a href="./cpp/vcc/SDHLibrary.vcproj">./cpp/vcc/SDHLibrary.vcproj</a> project file of the SDHLibrary itself (Properties->Configuration Properties->C/C++->Preprocessor->Preprocessordefinitions)</li>
+            <li>adjust the include path for the header file <code>ntcan.h</code> to use ESD CAN, if needed.</li>
+            <li>Add the library file <code>ntcan.lib</code> from its actual location in your environment to the SDHLibrary project <a href="./cpp/vcc/SDHLibrary.vcproj">./cpp/vcc/SDHLibrary.vcproj</a>
+                <br>(Previously, up to and including SDHLibrary-CPP v0.0.2.0, you had to add the <code>ntcan.lib</code> to all the demo projects)  
+            </li>
+           </ul></li>
+          <li> If you have a supported adapter for the CAN-bus from company <a href="http://www.peak-system.com/">PEAK</a> and want to use it, then:
+          <ul>
+            <li>Set the <code>WITH_PEAK_CAN</code> preprocessor macro to <code>1</code> in order to use the PEAK CAN library. Make this setting in the <a href="./cpp/vcc/SDHLibrary.vcproj">./cpp/vcc/SDHLibrary.vcproj</a> project file of the SDHLibrary itself (Properties->Configuration Properties->C/C++->Preprocessor->Preprocessordefinitions)</li>
+            <li>adjust the include path for the header file <code>Pcan_usb.h</code> to use PEAK CAN, if needed.</li>
+            <li>Add the library file <code>pcan.lib</code> from its actual location in your environment to the SDHLibrary project <a href="./cpp/vcc/SDHLibrary.vcproj">./cpp/vcc/SDHLibrary.vcproj</a>
+                <br>(Previously, up to and including SDHLibrary-CPP v0.0.2.0, you had to add the <code>pcan.lib</code> to all the demo projects)</li>
+            <li><em>Note:</em> The SDHLibrary currently supports the PCAN-Light driver API from PEAK only, not the newer PCAN-Basic variant. 
+               On linux please use the "chardev" driver, not the "netdev" one.
+            </li>
+                
+           </ul></li>
+
+          <li> If you do <b>not</b> have a supported ESD and or PEAK CAN card or do not want to use it, then:
+          <ul>
+             <li>Set the <code>WITH_ESD_CAN</code> and/or <code>WITH_PEAK_CAN</code> preprocessor macro to <code>0</code>. Make this setting in the <a href="./cpp/vcc/SDHLibrary.vcproj">./cpp/vcc/SDHLibrary.vcproj</a> project file of the SDHLibrary itself (Properties->Configuration Properties->C/C++->Preprocessor->Preprocessordefinitions)</li>
+             <li>Disable or remove the files <code>canserial-esd.h</code> and <code>canserial-esd.cpp</code> and/or <code>canserial-peak.h</code> and <code>canserial-peak.cpp</code> from the project file of the library: <a href="./cpp/vcc/SDHLibrary.vcproj">./cpp/vcc/SDHLibrary.vcproj</a></li>
+             <li>Remove the the <code>ntcan.lib</code> and/or <code>pcan.lib</code>, if it is present in the SDHLibrary project
+                 <br>(Previously, up to and including SDHLibrary-CPP v0.0.2.0, you had to remove the <code>ntcan.lib / pcan.lib</code> files from all the demo projects)
+             </li>
+           </ul></li>
+        </ul></li>
+    </ul>
+<hr>
+<h4 id="python">
+  <a class="directory" href="./python/"><img alt="#" src="./.htmlstuff/folder.png"/>./python/</a>
+  SDHLibrary-python, release 0.0.2.9, date 2014-09-30
+</h4>
+  The SDHLibrary-python is a Python library (package) and some demonstration scripts to control the SDH from a PC using the Python scripting language. 
+    <ul>
+      <li><a href="./python/doc/external/html/namespacesdh_1_1release.html#project_release_sdhlibrary_python">Changelog of the SDHLibrary-Python release</a>
+      <li><a href="./python/README.txt">./python/README.txt</a> : directory overview in TXT format</li>
+      <li><a href="./python/doc/index.html">./python/doc/index.html</a> documentation in HTML and PDF format</li>
+      <!-- <li><a href="./python/dist/SDHLibrary-python-0.0.2.9.win32.exe">./python/dist/SDHLibrary-python-0.0.2.9.win32.exe</a> Windows installer with the SDH python library nad some demonstration scripts
+      -->
+    </ul>
+    <h5 id="python_windows">Windows:</h5>
+    <ul>
+      <li><a href="./python/dist/SDHLibrary-python-0.0.2.9.win32.exe">./python/dist/SDHLibrary-python-0.0.2.9.win32.exe</a> Windows installer with the SDH python library and some demonstration scripts.
+        <br>
+        <br>
+        On Windows you might have to install some other packages first. These are contained on the CD in
+        the <a href="./python/misc/">./python/misc/</a> directory, or can be retrieved from the internet.
+        There are two supported versions of the python environment available, v2.5 and v2.6. Some of the packages are
+        version specific, please use either a python 2.6 or python 2.5 environment. 
+        <br>
+        <b>Remark: CAN support for python is available only for python 2.5 and 2.6 by ESD!</b>
+        <br>
+        <br>
+        The packages must be installed in the order given below (top to bottom).
+        <ul>
+          <li>Python 2.7 specific packages:
+          <ul>
+	          <li> <a href="./python/misc/python-2.7.5.msi">./python/misc/python-2.7.5.msi</a>  The Python scripting language for windows itself
+	          <br>(also available online: <a href="http://www.python.org/">http://www.python.org/</a>)</li>
+	          <li> <a href="./python/misc/pywin32-218.win32-py2.7.exe">./python/misc/pywin32-218.win32-py2.7.exe</a>  Python windows compatibility package (stdlib)
+	          <br>(also available online: <a href="http://sourceforge.net/projects/pywin32/">http://sourceforge.net/projects/pywin32/</a>)</li>
+	          <li> <a href="./python/misc/Readline-1.7.win32-py2.7.exe">./python/misc/Readline-1.7.win32-py2.7.exe</a> Python package for emulating readline 
+	          <br>(also available online: <a href="http://newcenturycomputers.net/projects/">http://newcenturycomputers.net/projects/</a>)</li>
+	      </ul></li>
+          <li>Python 2.6 specific packages:
+          <ul>
+	          <li> <a href="./python/misc/python-2.6.1.msi">./python/misc/python-2.6.1.msi</a>  The Python scripting language for windows itself
+	          <br>(also available online: <a href="http://www.python.org/">http://www.python.org/</a>)</li>
+	          <li> <a href="./python/misc/pywin32-212.win32-py2.6.exe">./python/misc/pywin32-212.win32-py2.6.exe</a>  Python windows compatibility package (stdlib)
+	          <br>(also available online: <a href="http://sourceforge.net/projects/pywin32/">http://sourceforge.net/projects/pywin32/</a>)</li>
+	          <li> <a href="./python/misc/Readline-1.7.win32-py2.6.exe">./python/misc/Readline-1.7.win32-py2.6.exe</a> Python package for emulating readline 
+	          <br>(also available online: <a href="http://newcenturycomputers.net/projects/">http://newcenturycomputers.net/projects/</a>)</li>
+	      </ul></li>
+          <li>Python 2.5 specific packages:
+          <ul>
+	          <li> <a href="./python/misc/python-2.5.1.msi">./python/misc/python-2.5.1.msi</a> The Python scripting language for windows itself
+	          <br>(also available online: <a href="http://www.python.org/">http://www.python.org/</a>)</li>
+	          <li> <a href="./python/misc/pywin32-212.win32-py2.5.exe">./python/misc/pywin32-212.win32-py2.5.exe</a> Python windows compatibility package (stdlib)
+	          <br>(also available online: <a href="http://sourceforge.net/projects/pywin32/">http://sourceforge.net/projects/pywin32/</a>)</li>
+	          <li> <a href="./python/misc/Readline-1.7.win32-py2.5.exe">./python/misc/Readline-1.7.win32-py2.5.exe</a>  Python package for emulating readline 
+	          <br>(also available online: <a href="http://newcenturycomputers.net/projects/">http://newcenturycomputers.net/projects/</a>)</li>
+          </ul></li>
+        </ul>
+	  <li> <a href="./python/misc/pyserial-2.7.win32.exe">./python/misc/pyserial-2.7.win32.exe</a> Python package for accessing the serial interface
+      <br>(also available online: <a href="http://sourceforge.net/projects/pyserial/">http://sourceforge.net/projects/pyserial/</a>)</li>
+	  </li>
+    </ul>
+    <h5 id="python_linux">Linux / Cygwin:</h5>
+    <ul>
+      <li><a href="./python/dist/SDHLibrary-python-0.0.2.9.cygwin-1.7.31-i686.tar.gz">./python/dist/SDHLibrary-python-0.0.2.9.cygwin-1.7.31-i686.tar.gz</a> Python package a compressed tar archive containing the SDH python library and some demonstration scripts.
+        These files are also contained uncompressed in the directories 
+        <a href="./python/sdh/">./python/sdh/</a> and <a href="./python/demo/">./python/demo/</a> respectively. 
+        <br>
+        <br>
+        For Linux you might have to install some other packages first. These are partly contained on the CD in
+        the <a href="./python/misc/">./python/misc</a> directory, are available via your favourite package installation tool or can be retrieved from the internet.
+        <ul>
+          <li> <a href="./python/misc/pyserial-2.6.tar.gz">./python/misc/pyserial-2.7.tar.gz</a>  Python package for accessing the serial interface
+          <br>(or look for something like python-serial or pyserial in the package installer,
+          <br> or online: <a href="http://sourceforge.net/projects/pyserial/">http://sourceforge.net/projects/pyserial/</a>)</li>
+          <li> Tkinter: Python package for GUI based user interaction
+          <br>(or look for something like tkinter python-tk in the package installer,
+          <br> or online: <a href="http://wiki.python.org/moin/TkInter">http://wiki.python.org/moin/TkInter</a>)</li>
+        </ul>
+    <br>
+    On Linux you might have to convert the line endings from windows style (CR,LF) to unix style (LF) to
+    make the demo scripts work. To do this just call '<code>make dos2unix</code>' in the <a href="./python/">./python/</a> directory.  
+    <br>
+    <br>
+    In order to use the python package sdh you have to make it known to the python interpreter. You can do this by 
+    installing it to some standard location, or by modifiying the <code>PYTHONPATH</code> environment variable.
+	To install to the standard location call <code>python setup.py install</code> in 
+	the <a href="./python/">./python/</a> directory. To modify the <code>PYTHONPATH</code> you can use the provided
+	<code><a href="./sdhsetenv">./sdhsetenv</a></code> script. This must be 'sourced in', e.g. in 
+	<code>bash</code> use <code>source sdhsetenv</code> in the distributions top level directory <a href="./">./</a>.
+	</li>
+    </ul>
+<hr>
+<h3 id="additional">Additional stuff</h3>
+<h4 id="tools">
+  <a class="directory" href="./tool/"><img alt="#" src="./.htmlstuff/folder.png"/>./tool/</a>
+  Tools
+</h4>
+    <ul>
+      <li><a href="./tool/dsa_explorer-3.1.131.msi">tool/dsa_explorer-3.1.131.msi</a>, Windows installer for a visualization programm for the tactile sensors of the SDH2.</li>
+      <li><a href="./tool/philips_flash_utility.zip">tool/philips_flash_utility.zip</a>, Zip archive with windows tool to flash (update) the tactile sensor controller DSACON32m within the SDH.</li>
+    </ul>
+
+<hr>
+<h4 id="docu">
+  <a class="directory" href="./doc/"><img alt="#" src="./.htmlstuff/folder.png"/>./doc/</a>
+  General documentation
+</h4>
+    <ul>
+      <li><a href="./doc/SDH2_documentation_overview.pdf">./doc/SDH2_documentation_overview.pdf</a> Overview of documentation (PDF)</li>
+      <li><a href="./doc/SDH2_training.pdf">./doc/SDH2_training.pdf</a> Presentation slides for the SDH "hands on" training (PDF)</li>
+      <li><a href="./doc/SDH-2.0_Datasheet.pdf">./doc/SDH-2.0_Datasheet.pdf</a> datasheet of the SDH (PDF)</li>
+      <li><a href="./doc/SDH2_kinematics.pdf">./doc/SDH2_kinematics.pdf</a> kinematics of the SDH (PDF)</li>
+      <li><a href="./doc/SDH2_FingerDimensions.pdf">./doc/SDH2_FingerDimensions.pdf</a> dimensions of one finger of the SDH (PDF)</li>
+      <li><a href="./doc/SDH2_wiring.pdf">./doc/SDH2_wiring.pdf</a> general contacting and wiring scheme of the SDH (PDF)</li>
+      <li><a href="./doc/SDH2_wiring_test_board.pdf">./doc/SDH2_wiring_test_board.pdf</a> contacting and wiring scheme of the wooden board (PDF)</li>
+      <li><a href="./doc/SDH2_calibration.pdf">./doc/SDH2_calibration.pdf</a> Absolute encoder calibration of the SDH (PDF)</li>
+      <li><a href="./doc/SDH2_communication.pdf">./doc/SDH2_communication.pdf</a> Configurable communication structure of the SDH (PDF)</li>
+      <li><a href="./doc/SDH2_configuration-and-update.pdf">./doc/SDH2_configuration-and-update.pdf</a> Configuration and Update of the SDH (PDF)</li>
+      <li><a href="./doc/SDH2_ControllerStructure.pdf">./doc/SDH2_ControllerStructure.pdf</a> Controller structure of the SDH (PDF)</li>
+      <li><a href="./doc/SDH2_exchanging_tactile_sensors.pdf">./doc/SDH2_exchanging_tactile_sensors.pdf</a> Exchanging the tactile sensors of an SDH (PDF)</li>
+      <li><a href="./doc/DSACON32_Command_Set_Reference_Manual.pdf">./doc/DSACON32_Command_Set_Reference_Manual.pdf</a> Tactile sensor controller DSACON32 command set reference manual (PDF)</li>
+      <li><a href="./doc/Produktblatt%20DSA%209205_08-2008_DE.pdf">./doc/Produktblatt DSA 9205_08-2008_DE.pdf</a> Data sheet Tactile sensor DSA 9205 (PDF)</li>
+      <li><a href="./doc/Produktblatt%20DSACON32_09-2008_DE.pdf">./doc/Produktblatt DSACON32_09-2008_DE.pdf</a> Data sheet Tactile sensor controller DSACON32 (PDF)</li>
+      <li><a href="./doc/Configuring_the_DSACON32_over_the_built-in_shell_interface.pdf">./doc/Configuring_the_DSACON32_over_the_built-in_shell_interface.pdf</a> Tactile sensor controller DSACON32 configuration manual (PDF)</li>
+    </ul>
+
+<hr>
+<h4 id="firmware">
+  <a class="directory" href="./firmware/"><img alt="#" src="./.htmlstuff/folder.png"/>./firmware/</a>
+  Firmware
+</h4>
+    The firmware is the software that runs within the SDH itself and which can be updated too.
+    <ul>
+      <li><a href="./firmware/">./firmware/sdhflash-*.cygwin-*.exe</a> or a <a href="./firmware/">./firmware/sdhflash-*.win32.exe</a> Windows programs that install program and documentation to update the firmware of the SDH</li>
+      <li><a href="./firmware/">./firmware/sdhflash-*.tar.bz2</a> Compressed archives with program and documentation to update the firmware of the SDH on Linux</li>
+      <li><a href="./firmware/">./firmware/Firmware_DSACON32-M*.zip</a> Compressed archives with firmware for the tactile sensor controller DSACON32m within the SDH</li>
+      <li><a href="http://www.weiss-robotics.de/en/support/downloads.html">http://www.weiss-robotics.de/en/support/downloads.html</a> The latest firmware for the tactile sensor controller DSACON32m, available online from WEISS-Robotics</li>
+    </ul>
+    A description of the update procedure for both the SDH itself and the DSACON32m is given here: <a href="./doc/SDH2_configuration-and-update.pdf">./doc/SDH2_configuration-and-update.pdf</a>.
+
+<hr>
+<h4 id="cad">
+  <a class="directory" href="./CAD/"><img alt="#" src="./.htmlstuff/folder.png"/>./CAD/</a>
+  CAD data 
+</h4>
+    The CAD data or 3D models of the SDH components are contained in the directory
+    <a href="./CAD">./CAD</a>. The data is contained in the formats IGES, STEP and Wavefront. 
+    A more detailed explanation is contained in <a href="./CAD/position%20of%20the%20central%20points.pdf">./CAD/position of the central points.pdf</a>
+
+<hr>
+<h3 id="misc">Miscellaneous</h3>
+  <ul>
+    <li id="troubleshooting">
+     <a href="./troubleshooting.html">Troubleshooting some common problems of the SDH</a>
+     </li>
+  </ul>
+
+
+  <hr size="1">
+    <table width="100%" style="background-color:#0b2c55; color:white;" summary="footer">
+      <tr> 
+	<th style="text-align: right;"><address><small>
+	    <a href="mailto:dirk.osswald@de.schunk.com">dirk.osswald@de.schunk.com</a>
+	    <a href="http://www.de.schunk.com"><img src="http://www.de.schunk.com/schunk_files/website_images/schunk_logo_top_navi_v2.gif" alt="SCHUNK GmbH &amp; Co. KG" align="middle" border="0"></a>
+	  </small></address></th> 
+      </tr>
+    </table>
+
+</div>
+</div>    
+  </body>
+</html>
+<!-- //! \endcond -->  

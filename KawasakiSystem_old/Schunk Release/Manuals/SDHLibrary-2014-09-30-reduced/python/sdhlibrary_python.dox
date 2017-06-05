@@ -1,0 +1,77 @@
+//======================================================================
+/*!
+  \mainpage SDHLibrary_python
+
+  \brief The python package (library) for controlling the SDH (SCHUNK Dexterous Hand) from a PC
+
+  \section sdhlibrary_python_dox_general General project information
+    \author  Dirk Osswald
+    \par Project releases:
+    - Current release name and changelog: see \ref project_release_sdhlibrary_python "PROJECT_RELEASE"
+    - Current release date: see \ref project_date_sdhlibrary_python "PROJECT_DATE"
+
+
+  \section sdhlibrary_python_dox_purpose Purpose
+
+    This documentation describes the \b sdh package ("library")
+    for the python scripting language. 
+    - For an overview of the library itself see: \ref sdh "the sdh package".
+    - For some demonstration scripts see: \ref sdh_library_python_demo_scripts_group "demonstration scripts". 
+    
+  \section sdhlibrary_python_dox_links Links
+
+  - The SCHUNK homepage: <a href="http://www.schunk.com/">http://www.schunk.com/</a>
+  - The python homepage: <a href="http://www.python.org/">http://www.python.org/</a>
+  - This package has been tested and used with python versions 2.5 and 2.6.
+  - Additionally used python packages (mostly included on the CD): \anchor sdhlibrary_python_dox_additional_modules
+    - The \b pySerial module: <a href="http://pyserial.sourceforge.net/">http://pyserial.sourceforge.net/</a>
+    - For some demo scripts with graphical output \b Tkinter is used. This is usually included in a python distribution 
+    - Windows specific:
+      - Python windows compatibility package (stdlib) \b pywin32: http://sourceforge.net/projects/pywin32/
+      - Python package for emulating readline \b readline.py http://newcenturycomputers.net/projects/readline.html 
+    - \b py.test unit testing framework from <a href="http://codespeak.net/py/current/doc/index.html">http://codespeak.net/py/current/doc/index.html</a>.
+  - The documentation of \b doxygen (documentation generator) can be found:
+    - On the web: <a href="http://www.stack.nl/~dimitri/doxygen/">http://www.stack.nl/~dimitri/doxygen/</a>
+  - For extracting native python docstrings containing doxygen markup the
+    doxypy.py filter is used, see <a href="http://code.foosel.org/doxypy">http://code.foosel.org/doxypy</a>
+    
+  \internal
+
+  - Local \b doxygen documentation:
+    - Locally: <a href="file://localhost/m:/Software/Doxygen/doxygen/html/index.html"> M:\\Software\\Doxygen\\doxygen\\html\\index.html </a>
+
+  - The SCHUNK \b code \b file \b templates can be found in 
+    <a href="file://localhost/m:/Projekte/Vorlagen"> M:\\Projekte\\Vorlagen </a>
+
+  - The SCHUNK \b programming \b style \b guidelines can be found in 
+    <a href="file://localhost/m:/Projekte/Vorlagen/Doc/Programming%20Style%20Guidelines.doc"> M:\\Projekte\\Vorlagen\\Doc\\Programming Style Guidelines.doc </a>
+
+  - The documentation of \b subversion (version control system) can be found:
+    - Locally: <a href="file://localhost/m:/Software/Subversion/svn-book-1.3.html"> M:\\Software\\Subversion\\svn-book-1.3.html </a>
+    - On the web: <a href="http://svnbook.red-bean.com/">http://svnbook.red-bean.com/</a>
+
+
+  \section sdhlibrary_python_dox_copyright Copyright
+
+  Copyright (c) 2007-2011 SCHUNK GmbH & Co. KG
+
+  <HR>
+  \internal
+    \subsection sdhlibrary_python_dox_details SVN related, detailed file specific information:
+      $LastChangedBy: Osswald2 $
+      $LastChangedDate: 2011-02-08 14:53:00 +0100 (Di, 08 Feb 2011) $
+      \par SVN file revision:
+      $Id: sdhlibrary_python.dox 6432 2011-02-08 13:53:00Z Osswald2 $
+
+  \subsection sdhlibrary_python_dox_changelog Changelog of this file:
+      \include sdhlibrary_python.dox.log
+*/
+//======================================================================
+
+//======================================================================
+/*
+  emacs settings:
+  Local Variables:
+  mode: c++
+*/
+//======================================================================

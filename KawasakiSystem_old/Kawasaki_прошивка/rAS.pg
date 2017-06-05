@@ -1,0 +1,560 @@
+; автостарт
+.PROGRAM autostart.pc()
+	; ждём, пока будет включена кнопка питания
+	lab_WaitPower: 
+	IF SWITCH(POWER)==FALSE GOTO lab_WaitPower 
+	; скорость манипулятора
+	MC SPEED 100
+.END
+
+.PROGRAM main()
+	; инициализация начальными значениями
+	CALL init
+	; параметры подключения
+	port = 40000
+	ip[1] = 192
+	ip[2] = 168
+	ip[3] = 1
+	ip[4] = 57
+	max_length = 64
+	tout_open = 60
+	tour_rec = 10
+	eret = 0
+	ret = 0
+	tout = 10
+	; подключение к серверу	
+	CALL open_socket
+	IF sock_id < 0 THEN
+		GOTO exit_end
+	END	
+	; буффер для чтения команд
+	buffer[1,1] = 0
+	pos_read = 0
+	pos_write = 0
+	$inStr = ""
+	;буффер для вывода данных
+	out_buffer[1,1] = 0
+	pos_out_write = 0
+	pos_out_read = 0
+	; запуск асинхронного процесса для чтения команд по tcp
+	PCEXECUTE 1: reading,-1	
+	; пока активен флаг работы главного цикла
+	WHILE (isWorking) DO
+	    ; пока есть элекменты в очереди входящих команд
+		WHILE (pos_read <> pos_write) DO
+		    .id   = buffer[pos_read,1]
+		    .cmd  = buffer[pos_read,2]
+		    .param = buffer[pos_read,3]
+		    .vec1 = buffer[pos_read,4]
+		    .vec2 = buffer[pos_read,5]
+		    .vec3 = buffer[pos_read,6]
+		    .vec4 = buffer[pos_read,7]
+			.vec5 = buffer[pos_read,8]
+		    .vec6 = buffer[pos_read,9]
+			; передвигаем последний элемент очереди
+			pos_read = pos_read + 1
+			if pos_read == 1000 then
+				pos_read = 1
+			end
+			; обрабатываем команду из очереди
+			call execution(.id,.cmd,.param,.vec1,.vec2,.vec3,.vec4,.vec5,.vec6)
+		end
+		; получаем текущие положения
+		HERE .#p
+		POINT .p2 = HERE
+		; переводим положения в массивы
+		DECOMPOSE .arr[1]=.#p		
+		DECOMPOSE .arr2[1]=.p2	
+		; выводим данные по tcp
+		call sendstring(0,C_GetPositionAxis,0,.arr[1],.arr[2],.arr[3],.arr[4],.arr[5],.arr[6])
+		call sendstring(0,C_GetPosition,0,.arr2[1],.arr2[2],.arr2[3],.arr2[4],.arr2[5],.arr2[6])  		
+		; непосредственное управление
+		call mainLoop;
+	END
+exit:
+	; останавлинваем процесс чтения 
+	PCABORT 1:
+	; закрываем сокет
+	CALL close_socket
+exit_end:
+	; полная остановка
+	STOP
+.END
+; программа чтения 
+.PROGRAM reading
+	ret = 0
+	; процедура чтения по сети
+	CALL recv
+	; если произошла ошибка чтенияё
+	IF ret < 0 THEN	
+		PRINT "Communication error  code=",ret
+		; завершаем глввный цикл программы
+		isWorking = 0		
+	END
+.END
+; процедура отправки строки
+.PROGRAM sendstring(.id,.cmd,.param,.vec1,.vec2,.vec3,.vec4,.vec5,.vec6)
+	; формируем строку
+	.$send_buf[1] = ""
+	.$send_buf[1] = .$send_buf[1] + $ENCODE(/F6.0,.id)+" "
+	.$send_buf[1] = .$send_buf[1] + $ENCODE(/F6.0,.cmd)+" "
+	.$send_buf[1] = .$send_buf[1] + $ENCODE(/F6.0,.param)+" "
+	.$send_buf[1] = .$send_buf[1] + $ENCODE(/F6.0,.vec1)+" "
+	.$send_buf[1] = .$send_buf[1] + $ENCODE(/F6.0,.vec2)+" "
+	.$send_buf[1] = .$send_buf[1] + $ENCODE(/F6.0,.vec3)+" "
+	.$send_buf[1] = .$send_buf[1] + $ENCODE(/F6.0,.vec4)+" "
+	.$send_buf[1] = .$send_buf[1] + $ENCODE(/F6.0,.vec5)+" "
+	.$send_buf[1] = .$send_buf[1] + $ENCODE(/F6.0,.vec6)+" "
+	.buf_n = 1
+	.sret = 1
+	; отправляем строку
+	TCP_SEND .sret,sock_id,.$send_buf[1],.buf_n,tout
+	; если ошибка
+	IF .sret<0 THEN
+		PRINT "Sending failed"
+	END
+.END
+; открытие сокета
+.PROGRAM open_socket()
+	.er_count = 0
+connect:
+	; попытка открытия сокета
+	TCP_CONNECT sock_id,port,ip[1],tout_open
+	; если ошибка
+	IF sock_id<0 THEN
+	    ; делается пять попыток
+		IF .er_count>=5 THEN
+			PRINT "Connection with PC failed. Program stopped"
+			isWorking = 0
+		ELSE
+			.er_count = .er_count+1
+			PRINT "TCP_CONNECT error id=",sock_id," er_count=",.er_count
+			GOTO connect
+		END		
+	ELSE
+		PRINT "TCP_CONNECT OK id=",sock_id
+	END
+.END
+; чтение параметров
+.PROGRAM recv();
+	.num = 0
+	TCP_RECV ret,sock_id,$recv_buf[1],.num,tour_rec,max_length
+	IF ret<0 THEN
+		PRINT "TCP_RECV error in RECV ",ret
+	ELSE
+		IF .num>0 THEN
+			FOR .n = 1 TO .num
+				$inStr = $inStr+$recv_buf[.n]
+				WHILE (LEN($inStr)>=63) DO
+					FOR .i = 1 TO 9
+						.$value = $DECODE($inStr," ",0)
+						.tmp[.i] = VAL(.$value)
+						.$value = $DECODE($inStr," ",1)
+					END
+					;PRINT .tmp[1]," ",.tmp[2]," ",.tmp[3]," ",.tmp[4]," ",.tmp[5]," ",.tmp[6]," ",.tmp[7]," ",.tmp[8]," ",.tmp[9]
+					call processCommand(.tmp[1],.tmp[2],.tmp[3],.tmp[4],.tmp[5],.tmp[6],.tmp[7],.tmp[8],.tmp[9])
+				END
+			END
+		END
+	END
+.END
+; обработка входящих команд
+.PROGRAM processCommand(.id,.cmd,.param,.vec1,.vec2,.vec3,.vec4,.vec5,.vec6)
+	CASE .cmd OF
+	VALUE c_stop:
+		isWorking = 0;	
+	VALUE C_SENSOR_VALS:
+		sensorVals[1]=.vec1
+		sensorVals[2]=.vec2
+		sensorVals[3]=.vec3
+		sensorVals[4]=.vec4
+		sensorVals[5]=.vec5
+		sensorVals[6]=.vec6
+		sensorVals[7]=.param
+	VALUE C_SET_DELTA_POS:	
+		IF (.param<=0) THEN
+			shiftspeed = 10
+		ELSE
+			shiftspeed = .param
+		END
+		coordshift[1] = .vec1
+		coordshift[2] = .vec2
+		coordshift[3] = .vec3
+		coordshift[4] = .vec4
+		coordshift[5] = .vec5
+		coordshift[6] = .vec6
+	VALUE C_DELTA_POS_DISABLE:
+		algN = A_NULL
+		FOR .i = 1 TO 6 
+			coordshift[.i] = 0
+		END
+		PRINT "GET DELTA DISABLE"
+	Value C_START_GRAVITY:	
+		kP[1] = .vec1
+		kP[2] = .vec2
+		kP[3] = .vec3
+		kI[1] = .vec4
+		kI[2] = .vec5
+		kI[3] = .vec6
+		IF .param>0
+			algN = A_GRAVITATION
+		else
+			algN = A_GRAVITATION_MOMENTS
+		end
+		FOR .i = 1 TO 7 
+			minSensorVals[.i] = abs(.param)	
+		END
+		;SPEED 10 MM/S ALWAYS
+		PRINT "GRAVITY STARTED"
+	Value C_STOP_GRAVITY:
+		algN = A_NULL
+		print "Get command to stop"
+	VALUE C_SET_PARAMS:
+		if .vec1 > 0 then
+			act_accel = .vec1
+		end
+		if .vec2 > 0 then
+			act_decel = .vec2
+		end
+		if .vec3 > 0 then
+			act_speed = .vec3
+		end
+		if .vec4> 0 then		
+			act_mmps  = .vec4
+		end
+		if .vec5 > 0 then
+			delta_pos = .vec5
+		end
+		if .vec6 > 0 then
+			maxDeltaPos = .vec6
+		end
+		PRINT "SET NEW PARAMS"
+	VALUE C_CHANGE_GRAVITY_MODE:
+		case algN of
+		VALUE A_NULL:
+			algN  = A_GRAVITATION			
+		VALUE A_GRAVITATION:
+			algN  = A_GRAVITATION_MOMENTS
+		VALUE A_GRAVITATION_MOMENTS:
+			algN  = A_NULL
+		END
+		errArr[1,1]=0
+		FOR .i = 1 TO ERR_ARR_CNT
+			errArr[1,.i]=0
+			errArr[2,.i]=0
+			errArr[3,.i]=0
+			errArr[4,.i]=0
+			errArr[5,.i]=0
+			errArr[6,.i]=0
+			errArr[7,.i]=0
+		END
+		print "Change to ",algN
+	ANY :
+		;print "BUF"
+		buffer[pos_write,1] = .id
+		buffer[pos_write,2] = .cmd
+		buffer[pos_write,3] = .param
+		buffer[pos_write,4] = .vec1
+		buffer[pos_write,5] = .vec2
+		buffer[pos_write,6] = .vec3
+		buffer[pos_write,7] = .vec4
+		buffer[pos_write,8] = .vec5
+		buffer[pos_write,9] = .vec6
+		pos_write = pos_write+1
+		IF pos_write==1000 THEN
+			pos_write = 1
+		END
+	END	
+.END
+; закрытие сокета
+.PROGRAM close_socket()
+	isWorking = 0
+	TCP_CLOSE ret,sock_id
+	IF ret<0 THEN
+		PRINT "TCP_CLOSE error: ",$ERROR(ret)
+		TCP_CLOSE ret1,sock_id
+		IF ret1<0 THEN
+			PRINT "TCP_CLOSE error id=",sock_id
+		END
+	ELSE	
+		PRINT "TCP_CLOSE OK id=",sock_id
+	END	
+.END
+; исполнение команд управления
+.PROGRAM execution(.id,.cmd,.param,.vec1,.vec2,.vec3,.vec4,.vec5,.vec6)
+	;PRINT "GET CMD NUMBER ",.cmd
+	CASE .cmd OF	
+	VALUE C_DELTA_POS_ENABLE:	
+		algN = A_SET_DELTA_POINT
+		PRINT "GET DELTA ENABLE ",.param
+	value C_J:
+		if (.param<=0) then
+			.jspeed = 1
+		else
+			.jspeed = .param
+		end
+		if .vec1<>0
+			DRIVE 1,.vec1,.jspeed   
+		end
+		if .vec2<>0
+			DRIVE 2,.vec2,.jspeed
+		end
+		if .vec3<>0
+			DRIVE 3,.vec3,.jspeed
+		end
+		if .vec4<>0
+			DRIVE 4,.vec4,.jspeed
+		end
+		if .vec5<>0
+			DRIVE 5,.vec5,.jspeed
+		end
+		if .vec6<>0
+			DRIVE 6,.vec6,.jspeed
+		end
+		flgControl = 1
+	value C_GetPositionAxis:
+		HERE .#p
+		DECOMPOSE .arr[1]=.#p
+
+		;call sendstring(0,C_GetPositionAxis,0,.arr[1],.arr[2],.arr[3],.arr[4],.arr[5],.arr[6])
+
+	value C_J_POINT
+		flgControl = 1
+		JMOVE #PPOINT(.vec1,.vec2,.vec3,.vec4,.vec5,.vec6)		
+	VALUE c_home1:
+		flgControl = 1
+		HOME
+		PRINT "GET HOME COMMAND"
+	VALUE c_home2:
+		flgControl = 1
+		HOME 2
+		PRINT "GET HOME 2 COMMAND"
+	VALUE c_d_point:
+		flgControl = 1
+		POINT .p = TRANS(.vec1,.vec2,.vec3,.vec4,.vec5,.vec6)
+		.e = INRANGE(.p)
+		IF (.e>0) THEN
+			
+			;CALL sendstring(0,c_err,.e,0,0,0,0,0,0);
+
+		ELSE
+			IF (.param<=0) THEN
+				.jspeed = act_speed
+			ELSE
+				.jspeed = .param
+			END
+			LMOVE .p
+		END
+	VALUE c_draw:
+		flgControl = 1
+		IF (.param<=0) THEN
+			.jspeed = act_speed
+		ELSE
+			.jspeed = .param
+		END
+		DRAW .vec1,.vec2,.vec3,.vec4,.vec5,.vec6,.jspeed MM/S
+	VALUE c_set_pos:
+		POINT curpoint = TRANS(.vec1,.vec2,.vec3,.vec4,.vec5,.vec6)
+		movespeed = .param
+		algN = A_SET_CUR_POINT	
+
+	ANY:
+ 		;print "Number of command: ",.cmd
+	END
+.END
+; алгоритмы управления
+.PROGRAM mainLoop	 
+	if flgControl==1  then
+		IF DISTANCE(DEST,HERE)<0.1 
+			flgControl = 0
+			CALL sendstring(0,C_IN_POS,0,0,0,0,0,0,0);
+		END
+	END
+	;SPEED act_mmps MM/S ALWAYS
+	SPEED act_speed ALWAYS
+	ACCEL act_accel ALWAYS
+	DECEL act_decel ALWAYS
+	ACCURACY act_accu ALWAYS
+	case algN of
+	value A_SET_CUR_POINT:
+		CALL curpointproc
+	value A_SET_DELTA_POINT:
+		CALL deltaposproc
+	value A_GRAVITATION:
+		CALL gravitationProc
+	value A_GRAVITATION_MOMENTS:
+		CALL gravitationMomentProc
+	end	
+.END
+; отсекание переменной по границе
+.PROGRAM limitVar(.var,.lim)
+	IF .var>.lim THEN
+		.var = .lim
+	ELSE
+		IF (.var<-.lim) THEN
+			.var = -.lim
+		END
+	END	
+.END
+; синтез управления по номеру канала сенсора
+.PROGRAM regulate(.num,.res)
+	.delta = sensorVals[.num]
+	IF abs(.delta)<minSensorVals[.num] THEN
+		.delta = 0;
+	END
+	.uP = .delta*kP[.num]/100;
+	CALL limitVar(.uP,maxDeltaPos)
+	.iSum = 0
+	FOR .i = 2 TO ERR_ARR_CNT
+		errArr[.num,.i]=errArr[.num,.i-1]
+		.iSum = .iSum + errArr[.num,.i]
+	END
+	errArr[.num,1] = .delta
+	.iSum = .iSum + .delta 
+	.uI = .iSum*kI[.num]
+	CALL limitVar(.uI,maxDeltaPos)
+	.res = .uP+.uI
+	IF abs(.res)<1 THEN
+		.res = 0
+	END
+.END
+; обработка моментов
+.PROGRAM gravitationMomentProc
+	.u3 = 0
+	.u4 = 0
+	.u5 = 0
+	.u6 = 0 	
+	CALL regulate(7,.u3)
+	IF .u3==0 THEN
+		CALL regulate(6,.u4)
+		IF .u4 == 0 THEN
+			CALL regulate(5,.u5)
+			if .u5 == 0 THEN
+				CALL regulate(4,.u6)
+			END
+		END
+	END
+	print .u6," ",.u5," ",.u4," ",.u3;
+	HERE .#p
+	DECOMPOSE .arr[1]=.#p
+	if (sqrt(.u3*.u3+.u4*.u4+.u5*.u5+.u6*.u6)>0.001) then		
+		JMOVE #PPOINT(.arr[1],.arr[2],.arr[3]+.u3,.arr[4]+.u4,.arr[5]+.u5,.arr[6]+.u6)
+	end
+.END
+; обработка сил
+.PROGRAM gravitationProc
+	.uX = 0
+	.uY = 0
+	.uZ = 0
+	
+	CALL regulate(1,.uX)
+	CALL regulate(2,.uY)
+	CALL regulate(3,.uZ)
+	
+	print .uX," ",.uY," ",.uZ," "
+	
+	POINT .p = SHIFT(DEST BY -.uX,.uY,-.uZ)
+	LMOVE .p	
+.END
+; относительное смещение точки
+.PROGRAM deltaposproc
+	;IF DISTANCE(DEST,HERE)<0.5 THEN
+		POINT .p = SHIFT(DEST BY coordshift[1],coordshift[2],coordshift[3])
+		LMOVE .p
+	;END
+.end
+; выход в точку
+.PROGRAM curpointproc()
+	;DECOMPOSE .arr[1] = curPoint
+	.k = DISTANCE(HERE,curpoint)
+	IF (.k>5) THEN
+		.e = INRANGE(curpoint)
+		IF (.e>0) THEN
+			CALL sendstring(0,c_err,.e,0,0,0,0,0,0);
+		ELSE
+			SPEED movespeed MM/S ALWAYS
+			LMOVE curpoint
+		END
+	END
+	;TWAIT 0.5
+.END
+;инициализация переменных
+.PROGRAM init()
+	
+	act_mmps  = 100 ; скорость в миллиметрах
+	act_speed = 10
+	act_accel = 100
+	act_decel = 100
+	act_accu = 1
+	delta_pos = 1	
+	maxDeltaPos = 20
+	
+	SPEED act_mmps MM/S ALWAYS 
+	SPEED act_speed ALWAYS
+	ACCEL act_accel ALWAYS
+	DECEL act_decel ALWAYS
+	ACCURACY act_accu ALWAYS
+	CP ON	
+	
+	;управляющие программы от компьютера
+	C_STOP = 4; // остановка
+	C_J = 5; // относительный поворот одного оклена
+ 	C_GetPositionAxis = 6; // положение в поворотах
+	C_GetPosition = 7; // положение в осях
+	C_J_POINT = 8; // управление по координатам
+	C_D_POINT = 9; // управление по окординатам
+	C_HOME1 = 10; //выход в домашнюю зону 1
+	C_HOME2 = 11;// выход в домашнюю зону 2
+	C_ERR = 12; // ошибка
+	C_DRAW = 13; //смещение
+	C_SET_POS = 14; //задание по почте
+	C_SET_DELTA_POS = 15; // задание на смещение на условную единицу
+	C_DELTA_POS_ENABLE = 16; // разрешаем смещение на условную единицу
+	C_DELTA_POS_DISABLE = 17; // запрещаем смещение на условную единицу
+	C_SENSOR_VALS = 18; // значени¤ с сенсора
+	C_START_GRAVITY = 19; // включить программу гравитации
+	C_STOP_GRAVITY = 20; // выключить программу гравитации
+	C_U_REGULATOR = 21; // выход компонент регулятора
+	C_ERR_REGULATOR = 22; // ошибки: интегральная и пропорциональная
+	C_SET_PARAMS = 23; // параметры гравитации
+	C_IN_POS = 24; // дошёл до позиции
+	C_CHANGE_GRAVITY_MODE = 25; // изменени¤ режима гравити контролла
+	C_POWER_LOG = 26; // лог управления по силам
+	C_MOMENTS_LOG = 27; // лог управления по моментам
+
+	; идентификаторы алгоритмов управления
+	A_NULL = 0 ; ничего не делать
+	A_SET_CUR_POINT = 1 ; выход в точку
+	A_SET_DELTA_POINT = 2 ; смещение по осям 
+	A_GRAVITATION = 3 ; иммитация гравитации
+	A_GRAVITATION_MOMENTS = 4; имитаия гравитации в моментах
+	algN = 0; номер программы
+	algP = 0; номер состояния программы
+	speedflag = 0; флаг управления скоростью в процентах или в мм/с
+	ERR_ARR_CNT = 20; длина массива ошибок
+	
+	coordshift[1] = 0
+	sensorVals[1] = 0
+	minSensorVals[1] = 0
+	errArr[1,1]=0
+	kP[1] = 0
+	kI[1] = 0
+	
+	
+	FOR .i = 1 TO 6 
+		coordshift[.i] = 0
+	END	
+
+	FOR .i = 1 TO 7 
+		sensorVals[.i] = 0
+		minSensorVals[.i] = 100;
+		FOR .j = 1 TO ERR_ARR_CNT
+			errArr[.i,.j] = 0
+		END
+		kP[.i] = 5
+		kI[.i] = 5
+	END
+	
+	isWorking = 1 ; флаг работы главного цикла программы
+	flgControl = 1 ; флаг прямого управления
+.END

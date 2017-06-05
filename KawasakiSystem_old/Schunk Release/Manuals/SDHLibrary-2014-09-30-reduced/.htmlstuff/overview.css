@@ -1,0 +1,73 @@
+
+
+body{
+font-family: sans-serif;
+margin: 0;
+padding: 0;
+border: 0;
+overflow: hidden;
+height: 100%; 
+max-height: 100%; 
+}
+
+#framecontent{
+position: absolute;
+font-size:smaller;
+top: 0;
+bottom: 0; 
+left: 0;
+width: 200px; /*Width of frame div*/
+height: 100%;
+overflow: hidden; /*Disable scrollbars. Set to "scroll" to enable*/
+background: #0b2c55;
+color: white;
+}
+
+html>body #fixiert {  /* nur fuer moderne Browser! */
+  position: fixed;
+}
+
+#framecontent a:link {
+color:white;
+}
+
+#framecontent a:visited {
+color:white;
+}
+
+
+#maincontent{
+position: fixed;
+top: 0; 
+left: 200px; /*Set left value to WidthOfFrameDiv*/
+right: 0;
+bottom: 0;
+overflow: auto; 
+background: #fff;
+}
+
+.innertube{
+margin: 15px; /*Margins for inner DIV inside each DIV (to provide padding)*/
+}
+
+* html body{ /*IE6 hack*/
+padding: 0 0 0 200px; /*Set value to (0 0 0 WidthOfFrameDiv)*/
+}
+
+* html #maincontent{ /*IE6 hack*/
+height: 100%; 
+width: 100%; 
+}
+
+.directory{
+    font-family:monospace;
+    font-weight:bold;
+    background-color:lightgrey;
+    border-top: 0.6em solid lightgrey;
+    border-bottom: 0.6em solid lightgrey;
+}
+
+.directory img {
+  border-style:none;
+  vertical-align:bottom; 
+}

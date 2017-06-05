@@ -1,0 +1,60 @@
+Подготовка "внешнего" компьютера для работы с SDH на прямую.
+
+---------------------------------------------------------------
+
+1) Установить python 2.7.11
+Путь к файлу python/misc/python-2.7.11.msi (или с сайта http://www.python.org/)
+Путь к файлу:
+\python\misc
+2) Установить SDH-2 SDK (Python version) расположенный на диске от SDH
+Путь к файлу:
+python/dist/SDHLibrary-python-0.0.2.9.win32.exe 
+3) Установить  Python 2.7 specific packages расположенные на диске от SDH
+Путь к файлам:
+python/misc/pywin32-218.win32-py2.7.exe (или с сайта http://sourceforge.net/projects/pywin32/)
+python/misc/Readline-1.7.win32-py2.7.exe (или с сайта http://newcenturycomputers.net/projects/)
+python/misc/pyserial-2.7.win32.exe (или с сайта http://sourceforge.net/projects/pyserial/)
+4) Зайти в Пуск->SHUNK->cmd-in-demo-directory
+Запустить из консоли get-pip.py или установить из файла 
+5) Ввести по очереди комманды:
+pip install spyne
+pip install pyzmq
+pip install simplejson
+
+Этого достаточно для работы с SDH на компьютере (не контроллере робота под sunrise!)
+
+---------------------------------------------------------------
+
+Начало работы с SDH на "внешнем" компьютере с подключённым на прямую SDH
+
+1) Зайти в Пуск->SHUNK->cmd-in-demo-directory
+2) Подключить SDH к компьютеру патчкордом
+3) Настроить сетевой интерфейс на адрес ip 192.168.1.140 ( или любой другой не занятый ip из этой сети) mask 255.255.255.0
+4) Проверить пинг до sdh ip 192.168.1.42 из cmd-in-demo-directory (Комманда ping 192.168.1.42)
+5) Через консоль запустить скрипт demo-benchmark.py из папки с установленным python 2.7 (По умолчанию C:\pyton2.7\Scripts\) с параметрами --tcp= --dsa_tcp= , или создать ярлык для необходимого скрипта с параметром --tcp= --dsa_tcp= и запускать его через консоль.(пример ярлыка во вложении)
+
+Пример
+demo-benchmark.py --tcp= --dsa_tcp=
+В этой же папке лежат дургие скрипты, являющиеся различными примерами работы с SDH
+Таким образом можно по примерам разрабатывать свои скрипты и запускать их через консоль.
+
+89998474943 Евгений Байраченко arm-robotechs
+evgeny.bairachenko@arm-robotics.ru
+
+Примеры
+1 движение одним пальцем demo-velocity-acceleration
+2 движение всеми пльцами в изгибе demo-benchmark
+3 (набор координат шлет) demo-calc-workspace
+4 захват и удержание предмета demo-contact-grasping
+5 (!!!не работает) demo-dsa
+6 вывод углов полождения в суставах пальцев demo-GetAxisActualAngle
+7 (!!!не работает вроде как визуализация матриц тдатчиков нажатия) demo-gui
+8 (!!! не работает) demo-radians
+9 движение левым пальцем  (на [0.0, -10.0, -10.0])demo-simple
+10 движение левым пальцем с большим смещением demo-simple2
+11 возвращает пальцы в ноль demo-simple3
+12 (!!! не работает) demo-tactile
+13 (??температура) demo-temperature
+14 демонстрация рабочей зоны demo-workspace
+
+Перейти в корень cd/

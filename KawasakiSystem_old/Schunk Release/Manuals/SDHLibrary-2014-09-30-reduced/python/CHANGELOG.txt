@@ -1,0 +1,7 @@
+The changes to the SDHLibrary-python are described in the doxygen comment
+of the PROJECT_RELEASE variable in the file sdh.py
+
+So see sdh.py for details.
+
+
+

@@ -1,0 +1,9 @@
+# Shell script to set SDH specific environment. 
+#
+# This file must be 'sourced in', not executed!
+# 
+# This file is based on / copied from mca2 http://www.mca2.org/
+#
+test -f ./sdhsetenv || echo "Please source this script in SDHLibrary main directory"
+test -f ./sdhsetenv || return
+eval `set | egrep -i -a shell | python ./sdhsetenv.py $*`

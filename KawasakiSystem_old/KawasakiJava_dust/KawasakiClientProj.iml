@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="EclipseModuleManager">
+    <libelement value="jar://C:/Programming/ejml-0.29-libs/EJML-core-0.29.jar!/" />
+    <libelement value="jar://C:/Programming/ejml-0.29-libs/EJML-core-0.29-sources.jar!/" />
+    <libelement value="jar://C:/Programming/ejml-0.29-libs/EJML-dense64-0.29.jar!/" />
+    <libelement value="jar://C:/Programming/ejml-0.29-libs/EJML-dense64-0.29-sources.jar!/" />
+    <libelement value="jar://C:/Programming/ejml-0.29-libs/EJML-denseC64-0.29.jar!/" />
+    <libelement value="jar://C:/Programming/ejml-0.29-libs/EJML-denseC64-0.29-sources.jar!/" />
+    <libelement value="jar://C:/Programming/ejml-0.29-libs/EJML-equation-0.29.jar!/" />
+    <libelement value="jar://C:/Programming/ejml-0.29-libs/EJML-equation-0.29-sources.jar!/" />
+    <libelement value="jar://C:/Programming/ejml-0.29-libs/EJML-simple-0.29.jar!/" />
+    <libelement value="jar://C:/Programming/ejml-0.29-libs/EJML-simple-0.29-sources.jar!/" />
+    <libelement value="jar://C:/Programming/swt/swt.jar!/" />
+    <libelement value="jar://C:/Programming/swt/swt-debug.jar!/" />
+    <src_description expected_position="0">
+      <src_folder value="file://$MODULE_DIR$/src" expected_position="0" />
+    </src_description>
+  </component>
+  <component name="NewModuleRootManager" inherit-compiler-output="false">
+    <output url="file://$MODULE_DIR$/bin" />
+    <exclude-output />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
+    </content>
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="jdk" jdkName="JavaSE-1.8" jdkType="JavaSDK" />
+    <orderEntry type="module-library">
+      <library name="EJML-core-0.29.jar">
+        <CLASSES>
+          <root url="jar://C:/Programming/ejml-0.29-libs/EJML-core-0.29.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="EJML-core-0.29-sources.jar">
+        <CLASSES>
+          <root url="jar://C:/Programming/ejml-0.29-libs/EJML-core-0.29-sources.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="EJML-dense64-0.29.jar">
+        <CLASSES>
+          <root url="jar://C:/Programming/ejml-0.29-libs/EJML-dense64-0.29.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="EJML-dense64-0.29-sources.jar">
+        <CLASSES>
+          <root url="jar://C:/Programming/ejml-0.29-libs/EJML-dense64-0.29-sources.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="EJML-denseC64-0.29.jar">
+        <CLASSES>
+          <root url="jar://C:/Programming/ejml-0.29-libs/EJML-denseC64-0.29.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="EJML-denseC64-0.29-sources.jar">
+        <CLASSES>
+          <root url="jar://C:/Programming/ejml-0.29-libs/EJML-denseC64-0.29-sources.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="EJML-equation-0.29.jar">
+        <CLASSES>
+          <root url="jar://C:/Programming/ejml-0.29-libs/EJML-equation-0.29.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="EJML-equation-0.29-sources.jar">
+        <CLASSES>
+          <root url="jar://C:/Programming/ejml-0.29-libs/EJML-equation-0.29-sources.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="EJML-simple-0.29.jar">
+        <CLASSES>
+          <root url="jar://C:/Programming/ejml-0.29-libs/EJML-simple-0.29.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="EJML-simple-0.29-sources.jar">
+        <CLASSES>
+          <root url="jar://C:/Programming/ejml-0.29-libs/EJML-simple-0.29-sources.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="swt.jar">
+        <CLASSES>
+          <root url="jar://C:/Programming/swt/swt.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="swt-debug.jar">
+        <CLASSES>
+          <root url="jar://C:/Programming/swt/swt-debug.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+  </component>
+</module>

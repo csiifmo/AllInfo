@@ -1,0 +1,756 @@
+﻿.***************************************************************************
+.*=== AS GROUP ===         : AS_R1D0021G 2008/02/04 17:31
+.*USER IF AS               : UASR1D0021G 2008/02/04 17:16
+.*USER IF TP               : UTPR1D0021G 2008/02/04 17:26
+.*ARM CONTROL AS           : AASR1D0021G 2008/02/04 17:29
+.*USER IF AS MESSAGE FILE  : MAS1D021GEN 2008/02/04 17:22
+.*USER IF TP MESSAGE FILE  : MTP1D021GEN 2008/02/04 17:24
+.*ARM DATA FILE            : ARMR1D0021G 2008/02/04 17:21
+.*USER IF IPL              : UIP02080000 2007/06/28
+.*ARM CONTROL IPL          : AIP02080000 2007/06/28
+.*=== SERVO GROUP ===      : SV_R5000009 2008/04/21 09:18
+.*ARM CONTROL SERVO        : ASVR5000009 2008/04/21 09:18
+.*SRV DATA FILE            : ASPR5000009 2008/04/21 09:50
+.*ARM CONTROL SERVO CONT.  : ASCR5000009 2008/04/21
+.*ARM CONTROL SERVO FPGA   : ASFR5000002 2007/08/21 08:20
+.*   [Shipment setting data] 
+.*There is no Shipment setting data.
+.***************************************************************************
+
+.PROGRAM autostart.pc()
+	;NEU NEU NEU
+	;Setzen der Überwachungsgeschwindigkeit und Starten der startserver-Routine nachdem Motorsteuerung eingeschaltet wurde
+	lab_WaitPower:
+	IF SWITCH(POWER)==FALSE GOTO lab_WaitPower
+	;Überwachungsgeschwindigkeit auf 100%
+	;somit auch absolute Geschwindigkeiten in mm/s einstellbar
+	MC SPEED 100
+	MC EX startserver
+.END
+.PROGRAM checkpose(.&p,.t,.id)
+	;Überprüfung ob ein Pose-Punkt sich im Bewegungsbereich des Roboters befindet
+	;Falls nicht, wird die Bewegung abgebrochen und der Interpreter ausgeschaltet
+	;Eine Fehlermeldung an MatLab erfolgt
+	.e = INRANGE(.p)
+	;PRINT 1: .e
+	if .e == 32768 then
+		.t = 1
+		interpreter_on = 0
+		DECOMPOSE .arr[1]=.p
+		while sending_mode == 1 do
+		end
+		sending_mode = 1
+		call sendstring(.id,CPoseOutOfRange,0,.arr[1],.arr[2],.arr[3],.arr[4],.arr[5],.arr[6])
+		sending_mode = 0
+		DRIVE 1,0 ; Warte bis letzte Bewegung vorbei ist und setze letzte Axis/Pose-Werte neu
+		HERE lastpose
+		POINT #lastaxis = lastpose		
+	else
+		.t = 0
+	end
+	
+.END
+
+.PROGRAM checkaxis(.#p,.t,.id)
+	;Überprüfung ob ein Joint-Punkt sich im Bewegungsbereich des Roboters befindet
+	;Falls nicht, wird die Bewegung abgebrochen und und der Interpreter ausgeschaltet
+	;Eine Fehlermeldung an MatLab erfolgt
+	.e = INRANGE(.#p)
+	;PRINT 1: .e
+	if  .e == 32768 then
+		.t = 1
+		interpreter_on = 0
+		DECOMPOSE .arr[1]=.#p
+		while sending_mode == 1 do
+		end
+		sending_mode = 1
+		call sendstring(.id,CAxisOutOfRange,0,.arr[1],.arr[2],.arr[3],.arr[4],.arr[5],.arr[6])
+		sending_mode = 0
+		DRIVE 1,0 ; Warte bis letzte Bewegung vorbei ist und setze letzte Axis/Pose-Werte neu
+		HERE lastpose
+		POINT #lastaxis = lastpose		
+	else
+		.t = 0
+	end
+.END
+
+.PROGRAM execution(.id,.cmd,.info,.vec1,.vec2,.vec3,.vec4,.vec5,.vec6)
+;Ausführungsroutine
+
+;SetupNow-Commandos 
+;werden vor jedem Buffer-Commando überprüft und ggf. ausgeführt
+if now_command == 1 then
+ if speedflag == 0 then
+ 	SPEED act_speed ALWAYS
+ else
+	SPEED act_mmps MM/S ALWAYS
+ end
+ ACCEL act_accel ALWAYS
+ DECEL act_decel ALWAYS
+ ACCURACY act_accu ALWAYS
+	if act_cp == 1 then
+		CP ON
+	end
+	if act_cp == -1 then
+		CP OFF
+	end
+ now_command = 0
+end
+
+;Bei Kreisbewegungen werden 3 Punkte gebraucht, die ersten 2
+;werden hier zwischengespeichert
+case .cmd of
+	value CCircPose,CCircRelPose,CCircAxis,CCircRelAxis
+		case circle_start of
+			value 0
+				POINT .pc1 = lastpose ; Startpunkt
+				circle_start = 1
+			value 1
+				POINT .pc2 = lastpose ; Punkt 1 auf Kreisbahn
+				circle_start = 2
+		end
+	any :
+		if circle_start == 1 then
+			POINT lastpose = .pc1
+			POINT #lastaxis = lastpose
+		end
+		circle_start = 0
+end
+
+;Zunächst wird der Bewegungsbefehl überprüft und eine Punktvariable erstellt
+case .cmd of
+	value CPtpPose,CLinPose,CCircPose,CHybridPose,CJApproPose,CLApproPose
+		POINT .p = trans(.vec1,.vec2,.vec3,.vec4,.vec5,.vec6)
+		call checkpose(.&p,.t,.id)
+		if .t then
+			return
+		end
+		;Anzufahrende Position wird als Axis und Pose zwischengespeichert
+		;um später relative Verschiebung zu errechnen
+		POINT lastpose = .p
+		POINT #lastaxis = lastpose ; --> automatische Typumwandlung !
+	value CPtpRelPose,CLinRelPose,CCircRelPose,CHybridRelPose,CJApproRelPose,CLApproRelPose
+		;Neuer Punkt ist eine relative Verschiebung der letzten Axis/Pose die zwischengespeichert wurde
+		;POINT .p = SHIFT(lastpose by .vec1,.vec2,.vec3)
+		POINT .tp = trans(.vec1,.vec2,.vec3,.vec4,.vec5,.vec6)
+		POINT .p = lastpose + .tp
+		call checkpose(.&p,.t,.id)
+		if .t then
+			return
+		end
+		POINT lastpose = .p
+		POINT #lastaxis = lastpose	
+	value CPtpAxis,CLinAxis,CCircAxis,CHybridAxis,CJApproAxis,CLApproAxis
+	    POINT .#p= #ppoint(.vec1,.vec2,.vec3,.vec4,.vec5,.vec6);
+		call checkaxis(.#p,.t,.id)
+		if .t then
+			return
+		end
+		POINT #lastaxis = .#p
+		POINT lastpose = #lastaxis
+	value CPtpRelAxis,CLinRelAxis,CCircRelAxis,CHybridRelAxis,CJApproRelAxis,CLApproRelAxis
+		DECOMPOSE .a[1]=#lastaxis
+        .a[1] = .a[1] +.vec1
+        .a[2] = .a[2] +.vec2
+        .a[3] = .a[3] +.vec3
+        .a[4] = .a[4] +.vec4
+        .a[5] = .a[5] +.vec5
+        .a[6] = .a[6] +.vec6  
+        POINT .#p = #ppoint(.a[1],.a[2],.a[3],.a[4],.a[5],.a[6])
+		call checkaxis(.#p,.t,.id)
+		if .t then
+			return
+		end
+		POINT #lastaxis = .#p
+		POINT lastpose = #lastaxis
+end
+
+
+
+;Interpretation und Ausführen der einzelnen Kommandos
+case .cmd of 
+	value C_Setup:
+		if .vec1 >0 then
+			case .vec1 of
+			value C_PosAbove:
+				ABOVE
+			value C_PosBelow:
+				BELOW
+			value C_PosLefty:
+				LEFTY
+			value C_PosRighty:
+				RIGHTY
+			value C_PosDWrist:
+				DWRIST
+			value C_PosUWrist:
+				UWRIST
+			end
+		end
+		if .vec2 == 1 then
+			CP ON
+			act_cp = 1
+		end
+		if .vec2 == -1 then
+		    CP OFF
+			act_cp = -1
+	    end
+		if .vec3 >0 then
+			if .vec3 < 10000 then
+				SPEED .vec3 ALWAYS
+		    	act_speed = .vec3
+				speedflag = 0
+			else
+				act_mmps = .vec3 - 10000
+				SPEED act_mmps MM/S ALWAYS
+				speedflag = 1
+			end
+		end
+		if .vec4 >0 then
+			ACCEL .vec4 ALWAYS
+			act_accel = .vec4
+		end
+		if .vec5 >0 then
+			DECEL .vec5 ALWAYS
+			act_decel = .vec5
+		end
+		if .vec6 >0 then
+			ACCURACY .vec6 ALWAYS
+			act_accu = .vec6
+		end
+	value C_Signal:
+			signal .vec1,.vec2,.vec3,.vec4,.vec5,.vec6
+	value C_Pulse:
+			pulse .vec1,.vec2
+    value C_Clamp:
+		if .info <> 0 then
+			if (.info >0) then
+				signal -9,10
+				act_clamp = 1
+			else
+				signal 9,-10
+				act_clamp = -1
+			end
+		end
+	value C_SetBase:
+		BASE trans(.vec1,.vec2,.vec3,.vec4,.vec5,.vec6)
+	value C_SetTool:
+		TOOL trans(.vec1,.vec2,.vec3,.vec4,.vec5,.vec6)
+	value C_Wait:
+		twait .vec1
+	value CPtpPose, CPtpRelPose:
+		JMOVE lastpose
+	value CPtpAxis, CPtpRelAxis:
+		JMOVE #lastaxis
+	value CLinPose, CLinRelPose:
+		LMOVE lastpose
+	value CLinAxis, CLinRelAxis:
+		LMOVE #lastaxis
+	value CCircPose, CCircRelPose, CCircAxis, CCircRelAxis:
+		if circle_start == 2 then
+			JMOVE  .pc1
+			C1MOVE .pc2
+			C2MOVE lastpose
+			circle_start = 0
+		end 
+	value CZeroMove
+		drive 1,0 ; Eine Nullbewegung -> zum Synchronisieren mit MatLab
+		if circle_start == 0 then
+		  HERE #lastaxis
+		  POINT lastpose = #lastaxis
+        end		  
+    value CHome:
+		HOME
+    value CHome2:
+		HOME2
+    value CDraw:
+		DRAW .vec1,.vec2,.vec3,.vec4,.vec5,.vec6,act_mmps MM/S
+    value CTDraw:
+		TDRAW .vec1,.vec2,.vec3,.vec4,.vec5,.vec6,act_mmps MM/S
+    value CJDepart:
+		JDEPART .info
+    value CLDepart:
+		LDEPART .info
+    value CDrive:
+		if .vec1 <> 0 then
+			DRIVE 1,.vec1,act_speed		
+		end
+		if .vec2 <> 0 then
+			DRIVE 2,.vec2,act_speed
+		end
+		if .vec3 <> 0 then
+			DRIVE 3,.vec3,act_speed
+		end
+		if .vec4 <> 0 then
+			DRIVE 4,.vec4,act_speed
+		end
+		if .vec5 <> 0 then
+			DRIVE 5,.vec5,act_speed
+		end
+		if .vec6 <> 0 then
+			DRIVE 6,.vec6,act_speed
+		end
+    value CHybridPose, CHybridRelPose:
+		HMOVE lastpose
+	value CHybridAxis, CHybridRelAxis:
+		HMOVE #lastaxis
+    value CJApproPose, CJApproRelPose:    
+		JAPPRO lastpose,.info
+	value CJApproAxis, CJApproRelAxis:
+		JAPPRO #lastaxis,.info
+    value CLApproPose, CLApproRelPose:    
+		LAPPRO lastpose,.info
+	value CLApproAxis, CLApproRelAxis:
+		LAPPRO #lastaxis,.info	
+	;Falls es das Kommando nicht gibt :
+	;Fehlermeldung zurück an Matlab und Interpreter aus
+	any :
+		.info = .cmd
+		.cmd  = CNotSupported
+		interpreter_on = 0
+	end
+	
+	while sending_mode == 1 do
+	end
+	sending_mode = 1
+	call sendstring(.id,.cmd,.info,.vec1,.vec2,.vec3,.vec4,.vec5,.vec6)
+	sending_mode = 0
+
+.END
+
+.PROGRAM startserver
+;Hauptprogramm
+call ConfigurationData
+
+recv_num = 0
+$recv_buf[1] = ""
+pos_read  = 1
+pos_write  = 1
+circle_start = 0
+buffer[1,1] = 0
+closeserver = 0
+interpreter_on = 1
+
+ONE ErrorFcn
+
+WHILE 1==1 do
+print 2: " "
+twait 1
+print 2: "      ----------------------------------------------------------"  
+print 2: "    ----             R O B O T I C - T O O L B O X            ----"  
+print 2: "    ----             Igor Petranevski Corp.                     ----"  
+print 2: "  ----                     Ver. 2010/10/18                      ----"
+print 2: " ----          (w) by Michael Christern & Artur Schmidt          ----"
+print 2: "  ---  Research Group : Computational Engineering and Automation ---"
+print 2: "   ---        University of Applied Sciences Wismar, Germany    ---"
+print 2: "    --------------------------------------------------------------"
+print 2: "(1) Create Server-Socket"
+print 2: "(2) Start Interpreter"
+print 2: "(3) Create Server-Socket Port:40000"
+print 2: "    and start Interpreter"
+print 2: "(4) Close Server-Socket"
+print 2: "(5) Quit Startserver"
+
+;twait 2
+prompt 2: "Your choice :",.$c
+.c = VAL(.$c)
+	case .c of
+		value 1:	
+			prompt 2: "Port : ",.$port
+			.port = VAL(.$port)
+			print 2: "Waiting for client ..."
+			TCP_LISTEN .retl,.port
+			IF .retl<0 THEN
+				GOTO lab_exit
+			ELSE
+				TCP_ACCEPT sock_id,.port,60,ipclient[1]
+				IF sock_id<0 THEN
+					GOTO lab_exit
+				ELSE
+					PRINT 2: "Connection with Client startet"    
+				END
+			END
+			pcexecute 1: getdata,-1
+		value 2:
+			GOTO lab_start
+		value 3:
+			.port = 40000
+			print 2: "Waiting for client ..."
+			TCP_LISTEN .retl,.port
+			IF .retl<0 THEN
+				GOTO lab_exit
+			ELSE
+				TCP_ACCEPT sock_id,.port,60,ipclient[1]
+				IF sock_id<0 THEN
+					GOTO lab_exit
+				ELSE
+					PRINT 2: "Connection with Client startet"    
+				END
+			END
+			pcexecute 1: getdata,-1		
+			GOTO lab_start
+		value 4:
+			GOTO lab_close
+		value 5:
+			GOTO lab_quit
+	end
+end
+
+lab_start:
+print 2: "Interpreter is running ..."
+print 2: "Stop it, by using the command : robot(Handle,'close')"
+print 2: "or by pushing the Emergency-Button!"
+
+;SETUP DEFAULT-DATA and send Information to Client
+twait 1
+SPEED 100 MM/S ALWAYS
+SPEED 50 ALWAYS
+ACCEL 50 ALWAYS
+DECEL 50 ALWAYS
+ACCURACY 1 ALWAYS
+CP OFF
+act_mmps  = 100
+act_speed = 50
+speedflag = 0
+act_accel = 50
+act_decel = 50
+act_accu  = 1
+act_cp    = -1
+act_clamp = 1
+
+;FLAG das zeigt ob die routine sendstring aufgerufen ist
+;diese routine darf nämlich nur einmal aufgerufen sein
+sending_mode = 0
+
+
+while sending_mode == 1 do
+end
+sending_mode = 1
+call sendstring(0,C_Setup,0,0,-1,50,50,50,1)
+sending_mode = 0
+
+now_command = 0
+
+;GETTING BASE and TOOL-Data and send Information to Client
+
+POINT .p = BASE
+DECOMPOSE .arr[1]=.p
+while sending_mode == 1 do
+end
+sending_mode = 1
+call sendstring(0,C_SetBase,0,.arr[1],.arr[2],.arr[3],.arr[4],.arr[5],.arr[6])  
+sending_mode = 0
+
+POINT .p = TOOL
+DECOMPOSE .arr[1]=.p
+while sending_mode == 1 do
+end
+sending_mode = 1
+call sendstring(0,C_SetTool,0,.arr[1],.arr[2],.arr[3],.arr[4],.arr[5],.arr[6])  
+sending_mode = 0
+
+closeserver = 0
+stop_command = 0
+
+;Durchführen einer Nullbewegung, da erste Bewegung immer mit verringerter Geschwindigkeit
+;gefahren wird
+;Gleichzeitig werden die letzten Axis/Pose-Werte zwischengespeichert
+;Ist unteranderem auch wichtig, wenn nach rstop wieder fortgesetzt wird!
+
+HERE #lastaxis
+JMOVE #lastaxis
+POINT lastpose = #lastaxis
+while closeserver <> 1 do
+    if (interpreter_on == 1) then
+        if pos_read <> pos_write then
+            .id   = buffer[pos_read,1]
+            .cmd  = buffer[pos_read,2]
+            .info = buffer[pos_read,3]
+            .vec1 = buffer[pos_read,4]
+            .vec2 = buffer[pos_read,5]
+            .vec3 = buffer[pos_read,6]
+            .vec4 = buffer[pos_read,7]
+	        .vec5 = buffer[pos_read,8]
+            .vec6 = buffer[pos_read,9]
+			pos_read = pos_read + 1
+			if pos_read == 10000 then
+				pos_read = 1
+			end
+			call execution(.id,.cmd,.info,.vec1,.vec2,.vec3,.vec4,.vec5,.vec6)
+        end
+    end
+end
+
+lab_close:
+
+pcend 1:
+
+twait 1 ;nur für Scilab relevant
+tcp_close .retl,sock_id,5
+
+if .retl < 0 then
+	print 2: "Closing socket failed !"
+else
+	print 2: "Socket closed"
+end
+
+lab_exit:
+
+tcp_end_listen .retl,.port
+
+if .retl < 0 then
+	print 2: "Ending listening failed !"
+else
+	print 2: "Listening stopped"
+end
+
+print 2: " "
+print 2: "Server stopped !"
+
+lab_quit:
+.END
+
+.PROGRAM getdata
+;Leseroutine
+
+TCP_RECV .rret,sock_id,$recv_buf[1],.num,10,75
+
+IF .rret<0 THEN
+    recv_num = 0
+ELSE
+    recv_num = .num
+END
+
+
+for .n = 1 to recv_num
+    .$temp = $recv_buf[.n]
+
+    for .i=1 to 8
+        .$value = $decode(.$temp," ",0)
+        .tmp[.i] = val(.$value)
+
+        ;Leerzeichen entfernen
+        .$value = $decode(.$temp," ",1)
+    end
+    .$value = $decode(.$temp," ",0)
+    .tmp[9] = val(.$value)
+
+    case .tmp[2] of
+    value C_Brake:
+		if stop_command == 0
+			MC HOLD
+			stop_command = 1
+		end
+	value C_Stop:
+		if stop_command == 0
+			MC HOLD
+			circle_start = 0
+			stop_command = 2
+		end
+    value C_Run:
+		if stop_command == 2 then
+		    pos_read  = 1 
+			pos_write = 1
+			MC PRIME startserver,1,123
+			MC CONTINUE NEXT
+			stop_command = 0
+		else
+			if stop_command == 1 then
+				MC CONTINUE
+				stop_command = 0
+			end
+		end
+	value C_Close:
+		closeserver = 1
+    value C_InterpreterOn:
+		MC ERESET
+	    interpreter_on = 1
+	value C_InterpreterOff:
+		interpreter_on = 0
+	value C_InterpreterErase:
+		pos_read  = 1
+		pos_write  = 1
+		circle_start = 0	
+    value C_SetupNow:
+		if .tmp[5] == 1 then
+			act_cp = 1
+		end
+		if .tmp[5] == -1 then
+		    act_cp = -1
+	    end
+		if .tmp[6] >0 then
+			if .tmp[6] < 10000 then
+		    	act_speed = .tmp[6]	
+				speedflag = 0
+			else
+				act_mmps = .tmp[6]-10000
+				speedflag = 1
+			end
+		end
+		if .tmp[7] >0 then
+			act_accel = .tmp[7] 
+		end
+		if .tmp[8] >0 then
+			act_decel = .tmp[8] 
+		end
+		if .tmp[9] >0 then
+			act_accu  = .tmp[9] 
+		end
+		now_command = 1
+	value C_GetPositionPose:
+		if stop_command == 0 then 
+			HERE .p
+			DECOMPOSE .arr[1]=.p
+			while sending_mode == 1 do
+			end
+			sending_mode = 1
+			call sendstring(0,.tmp[2],act_clamp,.arr[1],.arr[2],.arr[3],.arr[4],.arr[5],.arr[6])
+			sending_mode = 0
+		end
+    value C_GetPositionAxis:
+		if stop_command == 0 then
+			HERE .#p
+			DECOMPOSE .arr[1]=.#p
+			while sending_mode == 1 do
+			end
+			sending_mode = 1
+			call sendstring(0,.tmp[2],0,.arr[1],.arr[2],.arr[3],.arr[4],.arr[5],.arr[6])
+			sending_mode = 0
+		end
+		
+    any :
+        buffer[pos_write,1] = .tmp[1] 
+        buffer[pos_write,2] = .tmp[2]
+        buffer[pos_write,3] = .tmp[3]
+        buffer[pos_write,4] = .tmp[4]
+        buffer[pos_write,5] = .tmp[5]
+        buffer[pos_write,6] = .tmp[6]
+        buffer[pos_write,7] = .tmp[7]
+        buffer[pos_write,8] = .tmp[8]
+        buffer[pos_write,9] = .tmp[9]
+		pos_write = pos_write + 1
+		if pos_write == 10000 then
+			pos_write = 1
+		end
+    end
+end
+
+.END
+
+.PROGRAM sendstring(.id,.cmd,.info,.vec1,.vec2,.vec3,.vec4,.vec5,.vec6)
+;Füllen des Sendstrings und verschicken
+
+	.$send_buf[1] = ""
+	.$send_buf[1] = .$send_buf[1] + $ENCODE(/F6.0,.id)+" "
+	.$send_buf[1] = .$send_buf[1] + $ENCODE(/F3.0,.cmd)+" "
+	.$send_buf[1] = .$send_buf[1] + $ENCODE(/F4.0,.info)+" "
+	.$send_buf[1] = .$send_buf[1] + $ENCODE(/F9.3,.vec1)+" "
+	.$send_buf[1] = .$send_buf[1] + $ENCODE(/F9.3,.vec2)+" "
+	.$send_buf[1] = .$send_buf[1] + $ENCODE(/F9.3,.vec3)+" "
+	.$send_buf[1] = .$send_buf[1] + $ENCODE(/F9.3,.vec4)+" "
+	.$send_buf[1] = .$send_buf[1] + $ENCODE(/F9.3,.vec5)+" "
+	.$send_buf[1] = .$send_buf[1] + $ENCODE(/F9.3,.vec6)+" "
+	.$send_buf[1] = .$send_buf[1] + $chr(13)
+
+	.buf_n = 1
+	.sret = 1
+	TCP_SEND .sret,sock_id,.$send_buf[1],.buf_n,10
+	IF .sret<0 THEN
+		PRINT "Sending failed"
+	END
+	;twait 0.2
+.END
+
+.PROGRAM ConfigurationData
+;Im folgendem sind die Befehlsnummern hinterlegt 
+;Diese sind bei jedem Roboter die selben
+
+    C_Brake       = 1
+    C_Stop        = 2 
+    C_Run         = 3
+    C_Close       = 4   
+    
+    C_SetupNow    = 5
+	
+	C_InterpreterOn      = 6
+    C_InterpreterOff     = 7
+    C_InterpreterErase   = 8
+	
+    C_GetPositionPose = 10
+    C_GetPositionAxis = 11
+    
+    C_Setup           = 20
+    
+    C_PosAbove = 1;
+    C_PosBelow = 2;
+    C_PosLefty = 3;
+    C_PosRighty= 4;
+    C_PosDWrist= 5;
+    C_PosUWrist= 6;                                                
+                            
+	C_Signal   = 30;
+	C_Pulse    = 31;
+	
+    C_SetBase         = 40
+    C_SetTool         = 41
+    
+    C_Wait            = 50
+                                                  
+    CPtpPose     = 100; 
+    CPtpAxis     = 101;
+    CPtpRelPose  = 200;
+    CPtpRelAxis  = 201;
+    
+    CLinPose     = 102; 
+    CLinAxis     = 103;
+    CLinRelPose  = 202;
+    CLinRelAxis  = 203;
+    
+    CCircPose     = 104 
+    CCircAxis     = 105
+    CCircRelPose  = 204
+    CCircRelAxis  = 205
+
+	CZeroMove     = 300
+    ;Befehle um abwärtskompatibel zu bleiben
+	;mit der NICHT-OOP-Toolbox 
+	    
+    CHome           = 500
+    CHome2          = 501
+    CDraw           = 502
+    CTDraw          = 503
+    CJDepart        = 504
+    CLDepart        = 505
+    CDrive          = 506
+    C_Clamp         = 507
+    
+    CHybridPose     = 600 
+    CHybridAxis     = 601
+    CHybridRelPose  = 700
+    CHybridRelAxis  = 701
+    
+    CJApproPose     = 602 
+    CJApproAxis     = 603
+    CJApproRelPose  = 702
+    CJApproRelAxis  = 703
+    
+    CLApproPose     = 604 
+    CLApproAxis     = 605
+    CLApproRelPose  = 704
+    CLApproRelAxis  = 705
+	
+	;Fehlermeldung
+	CPoseOutOfRange = -1
+	CAxisOutOfRange = -2
+	CNotSupported	= -3
+.END
+
+.PROGRAM ErrorFcn
+	PRINT 2: "Reset Robot-Error"
+	PRINT 2: "Type : ex startserver [ENTER]"
+	PRINT 2: "and take option 2"
+    PRINT "Reset Robot-Error"
+	PRINT "Type : ex startserver [ENTER]"
+	PRINT "and take option 2"
+	RETURNE
+.END
+
